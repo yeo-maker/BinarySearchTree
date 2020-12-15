@@ -1,0 +1,20 @@
+#include <vector>
+#include <string>
+#include <fstream>
+#include <LinkedList>
+
+class hash
+{
+ private:
+  char* data;
+  ;
+  
+ public:
+  hash(){}
+  int hash_function(T data);
+  hash(T _data)
+    { data = _data;
+      index = hash_function( _data);
+      
+    
+}

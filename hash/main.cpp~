@@ -1,0 +1,143 @@
+// case1.cpp : 此文件包含 "main" 函数。程序执行将在此处开始并结束。
+//
+ 
+#include "pch.h"
+#include <iostream>
+#include <assert.h>
+#define HASHNUMBER 29989    //散列表的大小，29989为质数
+#define MULT 31   //hash函数的一个乘子
+<br>//单词节点的定义
+typedef struct hashnode
+{
+    //链表中每个节点的结构
+    hashnode()
+    {
+        word = NULL;
+        count = 0;
+        next = NULL;
+    }
+    char* word;    //单词
+    int count;   //出现频率
+    struct hashnode *next;    //指向链表中具有相同hash值的下个节点
+}hashNode,*hashNodePtr;
+ 
+hashNodePtr bin[HASHNUMBER] = { NULL };    //HASHNUMBER大小的指针数组 作为hash表
+ 
+//这里将每个单词映射为一个小于HASHNUMBER的正整数
+ 
+//哈希函数
+unsigned int hashIndex(const char* pWord)   //返回hash表的索引（即hash指针数组的下标）
+{
+    assert(pWord != NULL);
+    unsigned int index = 0;   //以下四行为将一个单词映射到一个小于HASHNUMBER的正整数的函数
+    for (; *pWord != '\0'; pWord++)
+        index = MULT * index + *pWord;
+    return index % HASHNUMBER;
+}
+ 
+//想hash表中插入单词
+void insertWord(const char* pWord)    //在hash表中插入单词，如果已经存在了，则增加单词的出现次数count
+{
+    assert(pWord != NULL);
+    hashNodePtr p;
+    unsigned int index = hashIndex(pWord);    //用hash函数得到单词的hash值，也就是hash数组的下标
+    for ( p = bin[index]; p !=NULL; p++)
+    {
+        //查找单词是否已经在hash表中了
+        if (strcmp(pWord,p->word)==0)
+        {
+            //找到的话，直接将单词的次数增加1即可
+            (p->count)++;
+            return;
+        }
+    }
+    //如果上面没返回，也就是说hash表中没有这个单词，添加新节点，加入这个单词
+    p = (hashNodePtr)malloc(sizeof(hashNode));
+    p->count = 1;    //新节点的出现次数设置为1
+    p->word = (char *)malloc(strlen(pWord) + 1);
+    strcpy(p->word, pWord);
+    p->next = bin[index];  //将新生成的节点插入到index为下标的链表中去
+    bin[index] = p;
+}
+ 
+//读取Data.txt中的单词，并将每个单词插入到前面设计好的hash表中
+void readWordToHashTable(const char *path)
+{
+    //从文本文件中读取单词，插入到hash表中
+    FILE *fp;
+    char buf[1024];    //存储一行字符串
+    char *p;
+    fp = fopen(path, "r");
+    if (fp==NULL)
+    {
+        printf("open file error!exit\n");
+        exit(-1);
+    }
+ 
+    while (NULL!=fgets(buf,sizeof(buf),fp))   //数据读完，到文本末尾了
+    {
+        buf[strlen(buf) - 1] = '\0';     //出去单词最后的换行符
+        //print("%s/n",buf);
+        if (strcmp("",buf)==0)    //如果是空行，则继续
+        {
+            continue;
+        }
+         
+        p = strtok(buf, "'\t','\n',' '");    //用strtok函数从一行字符串中分离出每个单词，分隔符设置为（空格、逗号、换行、制表符）
+        while (p!=NULL)
+        {
+            insertWord(p);   //调用insertWord(),向hash表中插入分隔出来的单词
+            p = strtok(NULL, "'\t','\n'");
+        }
+    }
+    fclose(fp);
+}
+ 
+void writeHashTable(const char *path)
+{//将结果写到path中。
+    FILE *fp;
+    hashNodePtr p;
+    int i;
+    fp = fopen(path, "w");
+    if (fp == NULL)
+    {
+        printf("write file error!exit");
+        exit(-1);
+    }
+    for (i = 0; i < HASHNUMBER; i++)
+    {
+        for (p = bin[i]; p != NULL; p = p->next)
+        {
+            fprintf(fp, "index %d:<%s,%d>", i, p->word, p->count);
+            if (p->next == NULL)
+                fprintf(fp, "\n");
+        }
+    }
+    fclose(fp);
+}
+ 
+//释放hash表中占用的内存
+void freeHashTable()
+{
+    int i;
+    hashNodePtr p, q;
+    p = q = NULL;
+    for (i = 0; i < HASHNUMBER; i++)
+    {
+        p = bin[i];
+        while (p!=NULL)
+        {
+            q = p;
+            p = p->next;
+            free(q->word);
+            free(q);
+        }
+    }
+}
+  
+int main()
+{
+    readWordToHashTable("data.txt");
+    writeHashTable("result.txt");
+    return 0;
+}<br><br>
